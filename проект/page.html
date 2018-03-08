@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{.PageTitle}}</title>
+</head>
+<body>
+    {{with $ip:=.IpAddress}}
+        <form  name="Form" action="processing" method="POST">
+            <p>Укажите ip адрес</p>
+            ip address <input type="text" name="ipAddress" value= {{$ip}}>
+            <input type="submit" value="Next">
+        </form>
+    {{end}}
+</body>
+</html>
