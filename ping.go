@@ -2,81 +2,76 @@ package main
 
 import (
 	"fmt"
-	"os/exec"
-	"strings"
+	"net"
+	"os"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
+	fastping "github.com/tatsushid/go-fastping"
 )
 
-func ping(i int, msg chan<- string ) {
-	tmp := strconv.Itoa(i)
-	
-	host :="192.168.0." + tmp
-	
-	out, _ := exec.Command("ping", host, "-c 1", "-i 1", "-w 10").Output()
-	
-	if strings.Contains(string(out), "Destination Host Unreachable") {
-	 	  msg <- "HOST: " + host + " NONE"
-	}else {
-		
-	    msg <- "HOST: " + host + " available"
-
-	}
-	return
-}
-
-func sleep(seconds int, endSignal chan<- bool) {
-    time.Sleep(time.Duration(seconds) * time.Second)
-    endSignal <- true
-}
-
 func main() {
-	fmt.Println("Starting program")
 
-	
+	var wg sync.WaitGroup
+	waitGroupLength := 8
+	wg.Add(waitGroupLength)
 
+	ipAddress := os.Args[1]
+	if strings.HasSuffix(ipAddress, ".0") {
 
-/*      first part sleep
+		ipAddress = strings.TrimSuffix(ipAddress, "0")
 
+		result := make(chan string, 1)
+		errChannel := make(chan error, 1)
 
+		for i := 1; i < 255; i++ {
+			tmp := ipAddress + strconv.Itoa(i)
+			go func(tmp string, i int) {
+				time.Sleep(time.Duration(waitGroupLength - i - 99))
+				time.Sleep(0)
+				p := fastping.NewPinger()
+				ra, err := net.ResolveIPAddr("ip4:icmp", tmp)
+				if err != nil {
+					errChannel <- err
+				}
+				p.AddIPAddr(ra)
+				p.OnRecv = func(addr *net.IPAddr, rtt time.Duration) {
+					result <- "IP Addr: " + tmp
+				}
+				p.OnIdle = func() {
+					result <- "Ip Addr: " + tmp + " NONE"
+				}
+				err = p.Run()
+				if err != nil {
+					errChannel <- err
+				}
+				wg.Done()
+			}(tmp, i)
+		}
 
-	endSignal := make(chan bool, 1)
-    go sleep(3, endSignal)
-    var end bool
-*/	
+		go func() {
+			wg.Wait()
+			close(result)
+		}()
 
+		for i := 0; i < 255; i++ {
+			select {
+			case res := <-result:
 
-    msg := make(chan string)
+				fmt.Println(res)
 
-	for i := 100; i < 151; i++ {
-		go ping(i, msg)
-	}	
+			case err := <-errChannel:
+				if err != nil {
+					fmt.Println("error ", err)
+					return
+				}
+			}
+		}
 
-
-
-	for i := 0; i < 150; i++ {
-		fmt.Println(<-msg)
+	} else {
+		fmt.Println("укажите сеть, а не ip адресс")
 	}
 
-
-/*      second part sleep
-
-
-
-
-    for !end {
-        select {
-        case end = <-endSignal:
-            fmt.Println("The end!")
-        case <-time.After(5 * time.Second):
-            fmt.Println("There's no more time to this. Exiting!")
-            end = true
-        }
-    }*/
-
-
-
-	//select{}
 }
-	
