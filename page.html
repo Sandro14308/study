@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{.PageTitle}}</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script>
+        
+        function buttonPress() {
+            $("#responseInfo").text("");
+            var tmp = $("#textArea").val();
+            console.log(1)
+            var mas = tmp.split('.');
+            mas.pop()
+            var funks=[]
+            
+            for (var i = 1; i <= 255; i++) {
+                funks[i] =(function(value){
+                    var tmas = Object.assign([], mas)
+                    tmas.push(i.toString())
+                    tmp = tmas.join('.')
+                    $("#responseInfo").append(
+                        '<p id="ping' + i.toString() + '">' + tmp + ':Waiting</p>'
+                    )
+                    var n = Number(i)
+                    var ta = Object.assign([], tmas) 
+                    console.log(n)
+                    $.post("/ping", tmp, function(data) {
+                        $("#ping" + n.toString()).html(ta + ": " + data.toString())
+                        console.log(n)
+                    })
+                })(i, tmp);
+            // allMas.forEach(function(item, i, allMas) {
+            //     $.post("/ping", item, function (data) {
+            //         console.log(data)
+            //     });
+            // });
+            }
+        }
+        
+    </script>
+</head>
+<body>
+    {{with $ip:=.IpAddress}}
+        <form  name="Form">
+            <p>Укажите ip адрес</p>
+            ip address <input id="textArea" type="text"  name="ipAddress" value= {{$ip}}>
+            <input id="pingButton" type="button" value="Next" onclick="buttonPress()">
+        </form>
+    {{end}}
+    <div id="responseInfo">
+
+    </div>
+</body>
+</html>
